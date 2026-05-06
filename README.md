@@ -31,7 +31,8 @@ COVID-19 pandemic, respectively. These downturns are followed by strong recoveri
 the resilience of household spending over time.
 ### 1. Time Series Decomposition  
 
-![plot2](Output_plots/decomposed_time_series_plot.png)
+![plot2](Output_plots/decomposed_time_series_plot.png)  
+
 From the figure above
 - The trend component illustrates a consistent upward trajectory over the entire period, representing
 long-term growth in household spending.
@@ -98,8 +99,9 @@ To ensure the model is reliable, several diagnotic tests are conducted.
 ![plot6](Output_plots/histogram_of_residuals.png)  
 
 Overall, the distribution appears to approximate a normal shape, with the bulk of the residuals
-centered near zero. However, there are slight deviations at the tails. The left tail seems marginally elongated, indicating a potential negative skew, while the right tail shows a slightly sharp cutoff. This tail behavior suggests that while the residuals are somewhat symmetric, there are minor departures from perfect normality at the extremes.
-![plot7](Output_plots/qq_plot_of_residuals.png)  
+centered near zero. However, there are slight deviations at the tails. The left tail seems marginally elongated, indicating a potential negative skew, while the right tail shows a slightly sharp cutoff. This tail behavior suggests that while the residuals are somewhat symmetric, there are minor departures from perfect normality at the extremes.  
+
+![plot7](Output_plots/qq_plot_of_residuals.png)   
 
 For most of the distribution, the points lie reasonably close to the reference line, indicating that the central portion of the residuals behave as expected under normality. However, deviations become apparent in the tails. In the context of fitting an arima model, these findings suggests that the model perfoms reasonably well.
 #### b) Residual Autocorrelation Analysis
