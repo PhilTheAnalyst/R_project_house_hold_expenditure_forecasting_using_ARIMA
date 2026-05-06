@@ -22,13 +22,15 @@ March 1, 2026. The variable represents total monthly household expenditure expre
 adjusted annual rate. This means that the data has been adjusted to remove seasonal fluctuations,
 providing a clearer view of underlying trends.
 ## 📊 Data Description
-![plot 1](Output_plots/Plot_of_household_expenditure.png)
+![plot 1](Output_plots/Plot_of_household_expenditure.png)  
+
 From the figure there is a clear upward trend in the data, indicating consistent growth in household expen
 ditures from 1960 to 2026. This trend becomes particularly pronounced in recent years, suggesting
 an accelerating rate of increase. The plot also highlights notable dips in expenditures during the  periods of 2008-2009 and 2020, which are likely associated with the Global Financial Crisis and the 
 COVID-19 pandemic, respectively. These downturns are followed by strong recoveries, reinforcing
 the resilience of household spending over time.
-### 1. Time Series Decomposition
+### 1. Time Series Decomposition  
+
 ![plot2](Output_plots/decomposed_time_series_plot.png)
 From the figure above
 - The trend component illustrates a consistent upward trajectory over the entire period, representing
@@ -52,7 +54,8 @@ To assess the stationarity of the time series data, the Augmented Dickey-Fuller 
 - To fix the issue of non stationary further differencing is perfomed. At the second differencing operation, the series attains stationarity with the test giving out a **test statistic of -16.076** and a **p_value of 0.01**
 ![plot4](Output_plots/differenced_time_series_plot.png)
 ### 2. Model Identification (ACF & PACF)
-![plot5](Output_plots/acf_and_pacf_of_differenced_series.png)
+![plot5](Output_plots/acf_and_pacf_of_differenced_series.png)  
+
 Acf helps identify moving average terms while PACF helps identify Autoregressive terms.
 - The ACF plot of the differenced series reveals a significant spike at lag 1, which quickly
 dissipates to near-zero by lag 2, with subsequent lags showing no significant spikes and remaining
@@ -92,10 +95,12 @@ To ensure the model is reliable, several diagnotic tests are conducted.
 #### a) Normality of Residuals
 - Tested using the **shapiro-wilk test**. The test yielded  a **test statistic of 0.64572** and a **p-value (2.2e-16)** which is less than zero. 
 - Since the p-value is significantly smaller than the chosen **significance level (0.05)**, the null hypothesis that the residuals follow a normal distribution was rejected. This indicates some deviation from normality in the model’s residuals, which necessitates further investigation through graphical diagnostics.
-![plot6](Output_plots/histogram_of_residuals.png)
+![plot6](Output_plots/histogram_of_residuals.png)  
+
 Overall, the distribution appears to approximate a normal shape, with the bulk of the residuals
 centered near zero. However, there are slight deviations at the tails. The left tail seems marginally elongated, indicating a potential negative skew, while the right tail shows a slightly sharp cutoff. This tail behavior suggests that while the residuals are somewhat symmetric, there are minor departures from perfect normality at the extremes.
-![plot7](Output_plots/qq_plot_of_residuals.png)
+![plot7](Output_plots/qq_plot_of_residuals.png)  
+
 For most of the distribution, the points lie reasonably close to the reference line, indicating that the central portion of the residuals behave as expected under normality. However, deviations become apparent in the tails. In the context of fitting an arima model, these findings suggests that the model perfoms reasonably well.
 #### b) Residual Autocorrelation Analysis
 ![plot8](Output_plots/acf_and_pacf_of_residuals.png)
@@ -112,14 +117,17 @@ Two forecastng approaches are used:
  - One step a head 
  - Rolling forecast
 #### a) One-Step Ahead Forecast
-![plot9](Output_plots/one_step_ahead_forecast_vs_test_data.png)
+
+![plot9](Output_plots/one_step_ahead_forecast_vs_test_data.png)  
+
 The forecasted values diverge significantly from the actual data over time. Despite the
 test data showing a steady upward trend, the one-step ahead forecast predicts a much flatter trajectory,
 failing to capture the increasing trend in household expenditure. This indicates that the model lacks
 adaptability, and its static forecast is insufficient to keep pace with the evolving patterns in the data.
 #### b) Rolling Forecast
 
-![plot10](Output_plots/rolling_forecast_vs_test_data.png)
+![plot10](Output_plots/rolling_forecast_vs_test_data.png)  
+
 The rolling forecast is consistently able to adjust to changes in the data as new information is incorporated at each step. This adaptive nature allows it to better capture the upward trends
 and minor fluctuations in household expenditure.
 - In comparing the two methods, the rolling forecast outperforms the one-step-ahead forecast by a

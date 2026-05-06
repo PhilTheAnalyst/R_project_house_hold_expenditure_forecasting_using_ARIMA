@@ -1,14 +1,28 @@
-file_path <- "C:/Users/user/Desktop/Bachelors Degree In Actuarial 
-Science/project 4rth year/PCE.csv"
-#PCE_data <- read_csv(file_path)
+#installing the required packages
+install.packages(c(
+  "readr",      # for read_csv()
+  "tseries",    # for adf.test()
+  "forecast",   # for Arima(), forecast(), ndiffs(), nsdiffs()
+  "mFilter",    # for hpfilter()
+  "ggplot2"     # for plotting
+))
+#loading the packages
+library(readr)
+library(tseries)
+library(forecast)
+library(mFilter)
+library(ggplot2)
+#loading the data
+file_path <- "C:/Users/user/Desktop/R_project_house_hold_expenditure_forecasting_using_ARIMA/PCE_data/PCE.csv"
 PCE_data <- read_csv(file_path)
 head(PCE_data)
-PCE_ts <- ts(PCE_data$PCE, start=c(1959, 1),end = c(2024,7),
-frequency=12)
+
+PCE_ts <- ts(PCE_data$PCE, start=c(1959, 1),end = c(2026,3),frequency=12)
 #plotting the data
-plot(PCE_ts, main="Plot of Household Expenditure", ylab="PCE",
-xlab="Year",type="l")
+plot(PCE_ts, main="Plot of Household Expenditure", ylab="PCE",xlab="Year",type="l")
 #data description and summary statistics
+
+##################################################################################
 # Plot the STL decomposition
 PCE_decomposed <- decompose(PCE_ts)  # Additive decomposition
 trend_component <- PCE_decomposed$trend
@@ -34,7 +48,9 @@ ylab="Cyclic", xlab="Year")
 plot(residual_component, main="Residual Component", ylab=
 "Residuals", xlab="Year")
 # Reset plotting layout to single plot
-par(mfrow=c(1, 1))    
+par(mfrow=c(1, 1))
+#####################################################################
+
 #Transforming the data
 PCE_ts2<- log(PCE_ts)
 #plot(PCE_ts2)
@@ -49,10 +65,13 @@ test_data <- window(PCE_ts2, start=c(1959 + train_size %/% 12,
 train_size %% 12 + 1))
 plot(train_data)
 plot(test_data)
+
+######################################################################
 #Perform Augmented Dickey-Fuller test for stationarity
 adf_test <- adf.test(train_data)
 p_value <- adf_test$p.value 
-print(adf_test$p.value)# Interpret the result based on the p-value
+print(adf_test$p.value)
+#Interpret the result based on the p-value
 #how many differences are required to make the series stationary.
 d =ndiffs(train_data)
 print(d)
@@ -67,8 +86,10 @@ plot(PCE_ts_diff, main="Differenced Time Series", ylab=
 #checking for stationarity of the differenced time series
 adf_test2 <- adf.test(PCE_ts_diff)
 p_value2 <- adf_test2$p.value
-# Interpret the result based on the p-value
-#ACF and PACF plots
+print(p_value2)
+# Interpret the result based on the p-value 
+
+############################################################################
 #Plot the ACF and PACF of the differenced series
 #Arrange plots in 2 rows and 1 column
 
@@ -76,44 +97,60 @@ p_value2 <- adf_test2$p.value
 acf(PCE_ts_diff, main="ACF of Differenced Time Series")
 # Plot PACF of the differenced series
 pacf(PCE_ts_diff, main="PACF of Differenced Time Series")
-par(mfrow=c(1,1))   
+par(mfrow=c(2,1)) 
+
+#######################################################################
 #selecting the model with the lowest AIC and BIC from the
 candidate models
+#using the auto.arima for comparison
+auto.arima(PCE_ts_diff)
 # Define the range of p and q values
 p_values <- 1:5
 q_values <- 1:2
-# Initialize lists to store AIC, BIC, and HQC values
-aic_values <- c()
-bic_values <- c()
-hqc_values <- c()
-model_summaries <- list()
-# Loop through all combinations of p and q
+
+# Initialize storage
+results_list <- list()
+
 for (p in p_values) {
-for (q in q_values) {
-# Fit ARIMA model
-model <- arima(train_data, order = c(p, 2, q))
-# Extract AIC, BIC, and HQC
-aic <- AIC(model)
-bic <- BIC(model)
-# Calculate HQC
-n <- length(train_data)  # Number of observations
-k <- length(model$coef)  # Number of parameters
-hqc <- -2 * logLik(model) + 2 * k * log(log(n))  # HQC formula
-# Store AIC, BIC, and HQC values
-aic_values <- c(aic_values, aic)
-bic_values <- c(bic_values, bic)
-hqc_values <- c(hqc_values, hqc)
-# Store model summary
-model_summaries[[paste("ARIMA(", p, ",2,", q, ")", sep="")]]
-<- model}}     
-# Create a data frame with AIC, BIC, and HQC values
-results_df <- data.frame(
-Model = names(model_summaries),
-AIC = aic_values,
-BIC = bic_values,
-HQC = hqc_values
-)
-# Print the results
+  for (q in q_values) {
+    
+    model_name <- paste("ARIMA(", p, ",2,", q, ")", sep = "")
+    
+    # Try to fit model (avoid crashing)
+    tryCatch({
+      
+      model <- arima(train_data, order = c(p, 2, q))
+      
+      # Extract metrics safely
+      aic <- AIC(model)
+      bic <- BIC(model)
+      
+      n <- length(train_data)
+      k <- length(model$coef)
+      loglik <- as.numeric(logLik(model))   # ✅ FIX
+      
+      hqc <- -2 * loglik + 2 * k * log(log(n))
+      
+      # Store results as a row
+      results_list[[model_name]] <- data.frame(
+        Model = model_name,
+        AIC = aic,
+        BIC = bic,
+        HQC = hqc
+      )
+      
+    }, error = function(e) {
+      cat("Skipping", model_name, "due to error\n")
+    })
+  }
+}
+
+# Combine all results safely
+results_df <- do.call(rbind, results_list)
+
+# Reset row names
+rownames(results_df) <- NULL
+
 print(results_df)
 # Find the model with the lowest AIC, BIC, and HQC
 best_aic_model <- results_df[which.min(results_df$AIC), ]
@@ -125,26 +162,27 @@ print(best_aic_model)
 cat("\nModel with the lowest BIC:\n")
 print(best_bic_model)
 cat("\nModel with the lowest HQC:\n")
-print(best_hqc_model)    
+print(best_hqc_model)  
+####################################################################
+
 #maximum likelihood estimation.
-model <- arima(train_data, order = c(1, 2, 1), method = "ML")
+model <- arima(train_data, order = c(2, 2, 2), method = "ML")
 # Display the model summary with parameter estimates
 summary(model)
-best_model <- arima(train_data, order = c(1, 2, 1))
-##Checking the adequacy of the selected model
-#Normality of residuals 
-#shapiro-wilk statistical test
-# Extract residuals from the fitted model
+best_model <- arima(train_data, order = c(2, 2, 2))
+
+###################################################################
+#Checking the adequacy of the selected model
+#Normality of residuals using shapiro-wilk statistical test
+##################################################################
+#Extract residuals from the fitted model
 residuals <- ts(best_model$residuals)
 # Perform Shapiro-Wilk test
 shapiro_test <- shapiro.test(residuals)
 # Print the Shapiro-Wilk test result
-cat("Shapiro-Wilk normality test result:\n")
 print(shapiro_test)
-#Histogram of residuals
-par(mfrow=c(1,1))
-library(ggplot2)
 # Plot QQ plot
+par(mfrow=c(1,1))
 qqnorm(residuals, main = "QQ Plot of Residuals")
 qqline(residuals, col = "red")
 # Plot histogram of residuals
@@ -165,19 +203,21 @@ theme_minimal()
 #PACF plot of model residuals
 acf(residuals,main="ACF of Residuals")
 pacf(residuals,main="PACF of Residuals")
-par(mfow=c(1,1))
+par(mfow=c(2,1))
+
 # Ljung-Box Test for autocorrelation
 ljung_box_test <- Box.test(residuals, lag = 20, type = "Ljung-Box")
-alpha <- 0.05  # Significance level
-#Stationarity of residuals
-#ADF test on model residuals
+alpha <- 0.05 
+ljung_box_test 
+
+##############################################################
+#Stationarity of residuals 
 adf_test <- adf.test(residuals, alternative = "stationary")
 # Print the ADF test result
 cat("ADF test result:\n")
 print(adf_test)
-# Hypothesis testing
-alpha <- 0.05  # Significance level
-#forecasting using the one step ahead forecast
+
+################################################################
 # Forecast for the length of the test set
 full_forecast <- forecast(best_model, h=length(test_data))
 # Transform the values back from log scale
@@ -185,11 +225,9 @@ test_data_exp1 <- exp(test_data)
 forecasts_exp1 <- exp(full_forecast$mean)
 # Plotting One-Step Ahead Forecast with whole years on the x-axis
 par(mfrow=c(1,1))
-# Plot the transformed (original scale) forecasted values 
-against the actual test data
+#Plot the transformed (original scale) forecasted values against the actual test data
 plot(test_data_exp1, main = "One-Step Ahead Forecast vs Test
-Data ", 
-col = "blue", type = "l", xlab = "Time", ylab = "Household 
+Data ", col = "blue", type = "l", xlab = "Time", ylab = "Household 
 Expenditure", xaxt="n", ylim = range(test_data_exp1,
 forecasts_exp1))
 # Custom x-axis with whole years
@@ -200,6 +238,7 @@ axis(1, at=years, labels=years)
 lines(forecasts_exp1, col = "red", lty = 2)
 legend("topleft", legend = c("Test Data", "Forecast"), col =
 c("blue", "red"), lty = 1:2)
+
 #forecasting using rolling forecast technique
 forecasts <- ts(numeric(length(test_data)), start=start(test_data)
 , frequency=12)
@@ -212,7 +251,8 @@ extended_train_data <- window(PCE_ts2, end = c(1959 +
 updated_model <- Arima(extended_train_data, order=c(1,2,1))
 # Get the one-step ahead forecast and store the mean forecast
 forecasts[i] <- forecast(updated_model, h=1)$mean
-}   
+}
+
 # Transform the values back from log scale
 test_data_exp <- exp(test_data)
 forecasts_exp <- exp(forecasts)
@@ -228,6 +268,8 @@ axis(1, at=years, labels=years)
 lines(forecasts_exp, col = "red", lty = 2)
 legend("topleft", legend = c("Test Data", "Forecast"), col =
 c("blue", "red"), lty = 1:2)
+
+###############################################################
 # Create a table of the actual values, one-step ahead 
 forecast, and rolling forecast
 forecast_table <- data.frame(
@@ -235,24 +277,29 @@ forecast_table <- data.frame(
 "One-Step Ahead Forecast" = forecasts_exp1,
 "Rolling Forecast" = forecasts_exp
 )
+forecast_table
+
+###################################################################
 # Calculate Mean Square Error (MSE)  onestep ahead forecast
 mse1 <- mean((test_data_exp - forecasts_exp1) ^ 2)
-# Calculate Theil's Inequality Coefficient (U)  onestep ahead
-forecast
-# Theil's U is calculated as: sqrt(sum((actual - forecast)^2)
-/ sum((actual - mean(actual))^2))
+mse1
+# Calculate Theil's Inequality Coefficient (U)  onestep ahead forecast
+# Theil's U is calculated as: sqrt(sum((actual - forecast)^2)/ sum((actual - mean(actual))^2))
 theils_U1 <- sqrt(mean((test_data_exp - forecasts_exp1) ^ 2) /
 mean((test_data_exp - mean(test_data_exp)) ^ 2))
+theils_U1
 # Output the results using cat statements
 cat("Mean Square Error (MSE):", mse1, "\n")
 cat("Theil's Inequality Coefficient (U):", theils_U1, "\n")
+
+####################################################################
 # Calculate Mean Square Error (MSE) rolling forecast
 mse <- mean((test_data_exp - forecasts_exp) ^ 2)
+mse
 # Calculate Theil's Inequality Coefficient (U) rolling forecast
-# Theil's U is calculated as: sqrt(sum((actual - forecast)^2)
-/ sum((actual - mean(actual))^2))
 theils_U <- sqrt(mean((test_data_exp - forecasts_exp) ^ 2) /
 mean((test_data_exp - mean(test_data_exp)) ^ 2))
+theils_U
 # Output the results using cat statements
 cat("Mean Square Error (MSE):", mse, "\n")
 cat("Theil's Inequality Coefficient (U):", theils_U, "\n")
